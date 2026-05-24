@@ -2,7 +2,9 @@
 const nextConfig = {
   // Prisma and bcryptjs must NOT be bundled by webpack —
   // they rely on native binaries resolved at runtime.
-  serverExternalPackages: ['@prisma/client', 'bcryptjs'],
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client', 'bcryptjs'],
+  },
 
   images: {
     remotePatterns: [{ protocol: 'https', hostname: '**' }],
