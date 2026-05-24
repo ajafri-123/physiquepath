@@ -1,0 +1,181 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  password       String
+  name           String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  profile        Profile?
+  progressLogs   ProgressLog[]
+  weeklyCheckIns WeeklyCheckIn[]
+  aiChatMessages AIChatMessage[]
+
+  @@map("users")
+}
+
+model Profile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Basic metrics
+  age            Int
+  sex            String   // male | female | other
+  heightCm       Float
+  weightKg       Float
+  goalWeightKg   Float
+  bodyFatPercent Float?
+
+  // Goal
+  physiqueGoal String // lean | athletic | muscular | bulky | toned | strength | fat-loss
+  timeline     String // slow | moderate | aggressive
+
+  // Training
+  experience         String   // beginner | intermediate | advanced
+  activityLevel      String   // sedentary | light | moderate | very | extra
+  workoutDaysPerWeek Int
+  workoutLocation    String   // home | gym | both
+  equipment          String[]
+  injuries           String?
+
+  // Nutrition
+  dietaryPreference String   // normal | vegetarian | vegan | halal | keto | paleo | gluten-free
+  allergies         String[]
+  dislikedFoods     String[]
+  mealsPerDay       Int
+
+  // Lifestyle
+  sleepHours      Float
+  stressLevel     String // low | moderate | high
+  waterIntakeLiters Float
+  jobType         String // sedentary | active | mixed
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nutritionPlan NutritionPlan?
+  workoutPlan   WorkoutPlan?
+
+  @@map("profiles")
+}
+
+model NutritionPlan {
+  id        String  @id @default(cuid())
+  profileId String  @unique
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  dailyCalories   Int
+  proteinGrams    Int
+  carbsGrams      Int
+  fatGrams        Int
+  hydrationLiters Float
+
+  mealPlan    Json     // DayMeal[]
+  groceryList Json     // GroceryItem[]
+  tips        String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("nutrition_plans")
+}
+
+model WorkoutPlan {
+  id        String  @id @default(cuid())
+  profileId String  @unique
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  weeklySchedule          Json     // WorkoutDay[]
+  cardioRecommendation    String
+  recoveryTips            String[]
+  progressionScheme       String
+  estimatedTimelineWeeks  Int
+  expectedWeeklyChange    Float    // kg per week (negative = loss)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("workout_plans")
+}
+
+model ProgressLog {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date           DateTime @default(now())
+  weightKg       Float?
+  bodyFatPercent Float?
+
+  // Body measurements (cm)
+  chestCm Float?
+  waistCm Float?
+  hipsCm  Float?
+  armCm   Float?
+  thighCm Float?
+
+  // Daily tracking
+  caloriesConsumed  Int?
+  proteinGrams      Int?
+  carbsGrams        Int?
+  fatGrams          Int?
+  waterLiters       Float?
+  sleepHours        Float?
+  moodRating        Int?    // 1–10
+  energyRating      Int?    // 1–10
+  workoutCompleted  Boolean?
+  notes             String?
+
+  createdAt DateTime @default(now())
+
+  @@map("progress_logs")
+}
+
+model WeeklyCheckIn {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  weekStartDate        DateTime
+  currentWeightKg      Float
+  avgCalories          Int
+  workoutConsistency   Int      // 0–7 days completed
+  avgSleepHours        Float
+  hungerLevel          String   // low | moderate | high
+  energyLevel          String   // low | moderate | high
+  stressLevel          String   // low | moderate | high
+  sustainabilityRating String   // too_hard | hard | sustainable | easy | too_easy
+  feedback             String?
+
+  // Adjustments applied
+  calorieAdjustment Int?
+  planNotes         String?
+
+  createdAt DateTime @default(now())
+
+  @@map("weekly_check_ins")
+}
+
+model AIChatMessage {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role    String // user | assistant
+  content String @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@map("ai_chat_messages")
+}
